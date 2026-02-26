@@ -101,6 +101,31 @@ docker run --name ai-sre -itd --network host \
 
 > 如需使用内网域名访问腾讯云 API，增加 `-e TENCENTCLOUD_USE_INTERNAL=true` 参数。
 
+### 使用流程
+
+**Step 1 — 确认服务启动**
+
+在浏览器打开 `http://<your-ip>:8080`，可以看到 AI SRE Server Management 页面，显示服务状态为 **Running**，传输模式为 **http**，点击页面中的 `/mcp` 链接可进入 MCP 工具管理界面。
+
+**Step 2 — 在 Agent 中配置 MCP**
+
+在任意支持 MCP 协议的 AI Agent（如 Cline、Cherry Studio、Dify 等）中添加 MCP Server 配置：
+- **名称**：`ai-sre`
+- **类型**：`可流式传输的 HTTP (streamableHttp)`
+- **URL**：`http://<your-ip>:8080/mcp`
+
+保存后 Agent 会自动发现并注册 **36 个工具**。
+
+**Step 3 — 结合 LLM 进行查询**
+
+配置完成后，即可在对话中用自然语言向 LLM 提问，例如：
+
+```
+帮我查看下腾讯云 TKE 产品都支持哪些地域?
+```
+
+LLM 会自动调用 `describe_regions` 等 MCP 工具获取实时数据并返回结构化的结果。
+
 ### 环境要求
 
 - Go 1.24+ (源码编译时需要)

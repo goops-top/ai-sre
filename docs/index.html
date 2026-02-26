@@ -417,12 +417,19 @@
         footer a:hover { text-decoration: underline; }
 
         /* Responsive */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
         @media (max-width: 768px) {
             .hero h1 { font-size: 36px; }
             .hero p { font-size: 16px; }
             .stats { grid-template-columns: repeat(2, 1fr); }
             .feature-grid { grid-template-columns: 1fr; }
             .tool-grid { grid-template-columns: 1fr; }
+            .steps-grid { grid-template-columns: 1fr; }
             .nav-links { display: none; }
         }
     </style>
@@ -701,6 +708,43 @@
   /app/mcp-server <span class="flag">-transport</span> http <span class="flag">-port</span> 8080 <span class="flag">--log-level</span> debug
 
 <span class="comment"># MCP tools available at http://&lt;your-ip&gt;:8080/mcp</span></pre>
+        </div>
+
+        <!-- Usage Steps -->
+        <div style="margin: 48px 0 32px;">
+            <h3 style="font-size: 22px; font-weight: 600; margin-bottom: 28px; text-align: center; color: var(--text-primary);">3 Steps to Get Started</h3>
+            <div class="steps-grid">
+                <!-- Step 1 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; transition: all 0.3s;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                        <div style="width: 32px; height: 32px; background: var(--gradient-1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; flex-shrink: 0;">1</div>
+                        <span style="font-weight: 600; font-size: 15px;">确认服务启动</span>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;">
+                        打开 <code style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-cyan);">http://&lt;ip&gt;:8080</code> 看到 Server Management 页面，状态显示 <span style="color: var(--accent-green); font-weight: 600;">Running</span>，点击 <code style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-cyan);">/mcp</code> 进入工具管理界面。
+                    </p>
+                </div>
+                <!-- Step 2 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; transition: all 0.3s;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                        <div style="width: 32px; height: 32px; background: var(--gradient-2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; flex-shrink: 0;">2</div>
+                        <span style="font-weight: 600; font-size: 15px;">配置 Agent MCP</span>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;">
+                        在任意支持 MCP 的 AI Agent（Cline / Cherry Studio / Dify 等）中添加 MCP Server：类型选 <code style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-cyan);">streamableHttp</code>，URL 填 <code style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-cyan);">http://&lt;ip&gt;:8080/mcp</code>，保存后即可发现 <span style="color: var(--accent-blue); font-weight: 600;">36 个工具</span>。
+                    </p>
+                </div>
+                <!-- Step 3 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; transition: all 0.3s;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #10b981, #06b6d4); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; flex-shrink: 0;">3</div>
+                        <span style="font-weight: 600; font-size: 15px;">自然语言查询</span>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;">
+                        在对话中用自然语言提问，例如 <em style="color: var(--accent-green);">"帮我查看下腾讯云 TKE 产品都支持哪些地域？"</em>，LLM 会自动调用 MCP 工具获取实时数据并返回结构化结果。
+                    </p>
+                </div>
+            </div>
         </div>
 
         <div class="code-block">
