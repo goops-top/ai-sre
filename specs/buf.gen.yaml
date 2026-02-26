@@ -1,0 +1,28 @@
+version: v1
+plugins:
+  # Go代码生成
+  - plugin: buf.build/protocolbuffers/go
+    out: ../tools/mcp/pkg/generated
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/grpc/go
+    out: ../tools/mcp/pkg/generated
+    opt:
+      - paths=source_relative
+      - require_unimplemented_servers=false
+  
+  # Python代码生成
+  - plugin: buf.build/protocolbuffers/python
+    out: ../src/generated
+  - plugin: buf.build/grpc/python
+    out: ../src/generated
+  
+  # TypeScript代码生成
+  - plugin: buf.build/bufbuild/es
+    out: ../src/interfaces/web/frontend/src/generated/proto
+    opt:
+      - target=ts
+  - plugin: buf.build/connectrpc/es
+    out: ../src/interfaces/web/frontend/src/generated/proto
+    opt:
+      - target=ts

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI SRE - 智能运维助理</title>
+    <meta name="description" content="基于 MCP 协议的腾讯云基础设施智能查询工具系统">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-card-hover: #1f2b3d;
+            --border: #2a3548;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f59e0b;
+            --accent-pink: #ec4899;
+            --gradient-1: linear-gradient(135deg, #3b82f6, #06b6d4);
+            --gradient-2: linear-gradient(135deg, #8b5cf6, #ec4899);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px; height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.15;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .bg-glow-1 { top: -200px; right: -100px; background: var(--accent-blue); }
+        .bg-glow-2 { bottom: -200px; left: -100px; background: var(--accent-purple); }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            background: rgba(10, 14, 23, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 18px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+        .nav-brand .logo {
+            width: 32px; height: 32px;
+            background: var(--gradient-1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .nav-links { display: flex; gap: 28px; align-items: center; }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text-primary); }
+        .nav-github {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 8px;
+            color: var(--text-primary) !important;
+            font-size: 13px !important;
+            transition: all 0.2s;
+        }
+        .nav-github:hover { background: var(--bg-card-hover); border-color: var(--accent-blue); }
+
+        /* Hero */
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--accent-blue);
+            margin-bottom: 28px;
+        }
+        .hero-badge .dot {
+            width: 6px; height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        .hero h1 .gradient-text {
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin: 0 auto 40px;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background: var(--gradient-1);
+            color: white;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 30px rgba(59, 130, 246, 0.4); }
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { border-color: var(--accent-blue); background: var(--bg-card-hover); }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 0 0 80px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Section */
+        section {
+            padding: 80px 0;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 56px;
+        }
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .section-header p {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        /* Architecture */
+        .arch-diagram {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            overflow-x: auto;
+        }
+        .arch-diagram pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--accent-cyan);
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        /* Tool Grid */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 20px;
+        }
+        .tool-category {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            transition: all 0.3s;
+        }
+        .tool-category:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+        .tool-category-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .tool-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .tool-icon.tke { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+        .tool-icon.cvm { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+        .tool-icon.clb { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
+        .tool-icon.cdb { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
+        .tool-icon.vpc { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
+        .tool-icon.region { background: rgba(236, 72, 153, 0.15); color: var(--accent-pink); }
+        .tool-icon.builtin { background: rgba(148, 163, 184, 0.15); color: var(--text-secondary); }
+        .tool-category-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .tool-category-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .tool-list {
+            list-style: none;
+        }
+        .tool-list li {
+            padding: 8px 0;
+            border-top: 1px solid rgba(42, 53, 72, 0.5);
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+        }
+        .tool-list li:first-child { border-top: none; }
+        .tool-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+            color: var(--accent-cyan);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .tool-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Features */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+        .feature-icon {
+            font-size: 28px;
+            margin-bottom: 14px;
+        }
+        .feature-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Quick Start */
+        .code-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .code-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(42, 53, 72, 0.3);
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .code-header .dot-group { display: flex; gap: 6px; }
+        .code-header .dot-group span {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+        .code-header .dot-group span:nth-child(1) { background: #ef4444; }
+        .code-header .dot-group span:nth-child(2) { background: #f59e0b; }
+        .code-header .dot-group span:nth-child(3) { background: #10b981; }
+        .code-block pre {
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            overflow-x: auto;
+        }
+        .code-block .comment { color: var(--text-muted); }
+        .code-block .command { color: var(--accent-cyan); }
+        .code-block .flag { color: var(--accent-purple); }
+        .code-block .string { color: var(--accent-green); }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 0;
+            text-align: center;
+        }
+        footer p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        footer a:hover { text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .hero p { font-size: 16px; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .feature-grid { grid-template-columns: 1fr; }
+            .tool-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- Navigation -->
+<nav>
+    <div class="container">
+        <a href="#" class="nav-brand">
+            <div class="logo">S</div>
+            AI SRE
+        </a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#tools">Tools</a>
+            <a href="#quickstart">Quick Start</a>
+            <a href="https://github.com/goops-top/ai-sre" class="nav-github" target="_blank">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                GitHub
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-badge">
+            <span class="dot"></span>
+            MCP Protocol Powered
+        </div>
+        <h1>
+            <span class="gradient-text">AI SRE</span><br>
+            智能运维助理
+        </h1>
+        <p>基于 MCP (Model Context Protocol) 构建的智能化 SRE 运维工具系统，为 AI 模型提供腾讯云基础设施的实时查询能力</p>
+        <div class="hero-actions">
+            <a href="https://github.com/goops-top/ai-sre" class="btn btn-primary" target="_blank">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                View on GitHub
+            </a>
+            <a href="#quickstart" class="btn btn-secondary">Quick Start</a>
+        </div>
+    </div>
+</section>
+
+<!-- Stats -->
+<div class="container">
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-number">36</div>
+            <div class="stat-label">MCP Tools</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">6</div>
+            <div class="stat-label">Cloud Products</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">3</div>
+            <div class="stat-label">Transport Modes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">3</div>
+            <div class="stat-label">Auth Methods</div>
+        </div>
+    </div>
+</div>
+
+<!-- Features -->
+<section id="features">
+    <div class="container">
+        <div class="section-header">
+            <h2>Core Features</h2>
+            <p>为 AI 驱动的 SRE 运维而设计</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F527;</div>
+                <h3>36 个 MCP 工具</h3>
+                <p>覆盖 TKE、CVM、CLB、CDB、VPC、Region 六大产品线，提供全面的只读查询能力</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F310;</div>
+                <h3>多传输模式</h3>
+                <p>支持 stdio / HTTP / SSE 三种通信协议，灵活适配不同集成场景</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F512;</div>
+                <h3>安全认证</h3>
+                <p>Bearer Token / Basic Auth / API Key + IP 白名单，多重安全保障</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x2638;</div>
+                <h3>Kubernetes 公共库</h3>
+                <p>独立 Go 模块，支持命名空间、工作负载、Pod 状态的标准化查询</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4CA;</div>
+                <h3>双输出格式</h3>
+                <p>所有云产品工具同时支持 JSON 和 Table 两种输出格式</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F680;</div>
+                <h3>内网加速</h3>
+                <p>支持通过内网域名访问腾讯云 API，部署在云上时延迟更低、无需公网带宽</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Architecture -->
+<section id="architecture">
+    <div class="container">
+        <div class="section-header">
+            <h2>System Architecture</h2>
+            <p>分层解耦，模块化设计</p>
+        </div>
+        <div class="arch-diagram">
+<pre>
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502;  AI Models     &#x2502;  Claude  &#x2502;  GPT  &#x2502;  Other LLMs       &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;  Protocol      &#x2502;  stdio  &#x2502;  HTTP JSON-RPC  &#x2502;  SSE     &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;  MCP Server    &#x2502; Tool Manager &#x2502; Auth &#x2502; Router        &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;  Tools  &#x2502; TKE(11) &#x2502; CVM(2) &#x2502; CLB(4) &#x2502; CDB(4)       &#x2502;
+&#x2502;          &#x2502; VPC(9)  &#x2502; Region(3) &#x2502; Built-in(3)       &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;  SDK        &#x2502;  Tencent Cloud SDK  &#x2502;  K8s client-go    &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;  Infrastructure  &#x2502;  Tencent Cloud  &#x2502;  Kubernetes      &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+</pre>
+        </div>
+    </div>
+</section>
+
+<!-- Tools -->
+<section id="tools">
+    <div class="container">
+        <div class="section-header">
+            <h2>MCP Tools</h2>
+            <p>36 个标准化工具，覆盖 6 大腾讯云产品线</p>
+        </div>
+        <div class="tool-grid">
+            <!-- TKE -->
+            <div class="tool-category">
+                <div class="tool-category-header">
+                    <div class="tool-icon tke">T</div>
+                    <span class="tool-category-name">TKE 容器服务</span>
+                    <span class="tool-category-count">11 tools</span>
+                </div>
+                <ul class="tool-list">
+                    <li><span class="tool-name">tke_describe_clusters</span><span class="tool-desc">查询集群列表</span></li>
+                    <li><span class="tool-name">tke_describe_cluster_instances</span><span class="tool-desc">查询集群节点</span></li>
+                    <li><span class="tool-name">tke_describe_cluster_virtual_node</span><span class="tool-desc">查询超级节点</span></li>
+                    <li><span class="tool-name">tke_describe_addon</span><span class="tool-desc">查询已安装 addon</span></li>
+                    <li><span class="tool-name">tke_describe_master_component</span><span class="tool-desc">Master 组件状态</span></li>
+                    <li><span class="tool-name">tke_describe_log_switches</span><span class="tool-desc">日志开关状态</span></li>
+                    <li><span class="tool-name">tke_describe_cluster_extra_args</span><span class="tool-desc">集群自定义参数</span></li>
+                    <li><span class="tool-name">tke_describe_versions</span><span class="tool-desc">支持的 K8s 版本</span></li>
+                    <li><span class="tool-name">tke_describe_images</span><span class="tool-desc">节点 OS 镜像</span></li>
+                    <li><span class="tool-name">tke_get_app_chart_list</span><span class="tool-desc">可安装 addon 列表</span></li>
+                    <li><span class="tool-name">tke_get_cluster_level_price</span><span class="tool-desc">集群等级价格</span></li>
+                </ul>
+            </div>
+
+            <!-- VPC -->
+            <div class="tool-category">
+                <div class="tool-category-header">
+                    <div class="tool-icon vpc">V</div>
+                    <span class="tool-category-name">VPC 私有网络</span>
+                    <span class="tool-category-count">9 tools</span>
+                </div>
+                <ul class="tool-list">
+                    <li><span class="tool-name">vpc_describe_vpcs</span><span class="tool-desc">查询 VPC 列表</span></li>
+                    <li><span class="tool-name">vpc_describe_subnets</span><span class="tool-desc">查询子网列表</span></li>
+                    <li><span class="tool-name">vpc_describe_security_groups</span><span class="tool-desc">查询安全组</span></li>
+                    <li><span class="tool-name">vpc_describe_network_interfaces</span><span class="tool-desc">查询弹性网卡</span></li>
+                    <li><span class="tool-name">vpc_describe_addresses</span><span class="tool-desc">查询弹性公网 IP</span></li>
+                    <li><span class="tool-name">vpc_describe_bandwidth_packages</span><span class="tool-desc">查询带宽包</span></li>
+                    <li><span class="tool-name">vpc_describe_vpc_endpoint</span><span class="tool-desc">查询终端节点</span></li>
+                    <li><span class="tool-name">vpc_describe_vpc_endpoint_service</span><span class="tool-desc">查询终端节点服务</span></li>
+                    <li><span class="tool-name">vpc_describe_vpc_peering_connections</span><span class="tool-desc">查询对等连接</span></li>
+                </ul>
+            </div>
+
+            <!-- CLB -->
+            <div class="tool-category">
+                <div class="tool-category-header">
+                    <div class="tool-icon clb">L</div>
+                    <span class="tool-category-name">CLB 负载均衡</span>
+                    <span class="tool-category-count">4 tools</span>
+                </div>
+                <ul class="tool-list">
+                    <li><span class="tool-name">clb_describe_load_balancers</span><span class="tool-desc">查询 CLB 实例列表</span></li>
+                    <li><span class="tool-name">clb_describe_listeners</span><span class="tool-desc">查询监听器列表</span></li>
+                    <li><span class="tool-name">clb_describe_targets</span><span class="tool-desc">查询后端目标 (RS)</span></li>
+                    <li><span class="tool-name">clb_describe_target_health</span><span class="tool-desc">后端目标健康状态</span></li>
+                </ul>
+            </div>
+
+            <!-- CDB -->
+            <div class="tool-category">
+                <div class="tool-category-header">
+                    <div class="tool-icon cdb">D</div>
+                    <span class="tool-category-name">CDB 云数据库</span>
+                    <span class="tool-category-count">4 tools</span>
+                </div>
+                <ul class="tool-list">
+                    <li><span class="tool-name">cdb_describe_db_instances</span><span class="tool-desc">查询 MySQL 实例列表</span></li>
+                    <li><span class="tool-name">cdb_describe_db_instance_info</span><span class="tool-desc">查询实例详细信息</span></li>
+                    <li><span class="tool-name">cdb_describe_slow_logs</span><span class="tool-desc">查询慢查询日志</span></li>
+                    <li><span class="tool-name">cdb_describe_error_log</span><span class="tool-desc">查询错误日志</span></li>
+                </ul>
+            </div>
+
+            <!-- CVM -->
+            <div class="tool-category">
+                <div class="tool-category-header">
+                    <div class="tool-icon cvm">C</div>
+                    <span class="tool-category-name">CVM 云服务器</span>
+                    <span class="tool-category-count">2 tools</span>
+                </div>
+                <ul class="tool-list">
+                    <li><span class="tool-name">cvm_describe_instances</span><span class="tool-desc">查询实例列表</span></li>
+                    <li><span class="tool-name">cvm_describe_instances_status</span><span class="tool-desc">查询实例运行状态</span></li>
+                </ul>
+            </div>
+
+            <!-- Region + Built-in -->
+            <div class="tool-category">
+                <div class="tool-category-header">
+                    <div class="tool-icon region">R</div>
+                    <span class="tool-category-name">通用 &amp; 内置工具</span>
+                    <span class="tool-category-count">6 tools</span>
+                </div>
+                <ul class="tool-list">
+                    <li><span class="tool-name">describe_regions</span><span class="tool-desc">查询产品支持的地域列表</span></li>
+                    <li><span class="tool-name">get_region</span><span class="tool-desc">根据地域 ID 查询详细信息</span></li>
+                    <li><span class="tool-name">tencentcloud_validate</span><span class="tool-desc">验证云 API 连接和权限</span></li>
+                    <li><span class="tool-name">ping</span><span class="tool-desc">连接测试</span></li>
+                    <li><span class="tool-name">echo</span><span class="tool-desc">文本处理工具</span></li>
+                    <li><span class="tool-name">system_info</span><span class="tool-desc">系统运行时信息</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Start -->
+<section id="quickstart">
+    <div class="container">
+        <div class="section-header">
+            <h2>Quick Start</h2>
+            <p>几分钟内启动你的 AI SRE 工具服务</p>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <div class="dot-group"><span></span><span></span><span></span></div>
+                Terminal - Build &amp; Run
+            </div>
+<pre><span class="comment"># Clone the repository</span>
+<span class="command">git clone</span> https://github.com/goops-top/ai-sre.git
+<span class="command">cd</span> ai-sre/tools/mcp
+
+<span class="comment"># Build</span>
+<span class="command">go build</span> <span class="flag">-o</span> bin/mcp-server ./cmd/mcp-server
+
+<span class="comment"># Run in HTTP mode</span>
+<span class="command">export</span> TENCENTCLOUD_SECRET_ID=<span class="string">"your_secret_id"</span>
+<span class="command">export</span> TENCENTCLOUD_SECRET_KEY=<span class="string">"your_secret_key"</span>
+./bin/mcp-server <span class="flag">-transport</span> http <span class="flag">-port</span> 8080</pre>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <div class="dot-group"><span></span><span></span><span></span></div>
+                Terminal - Docker Deploy
+            </div>
+<pre><span class="comment"># Docker one-liner</span>
+<span class="command">docker run</span> <span class="flag">-d</span> \
+  <span class="flag">--name</span> ai-sre-mcp-server \
+  <span class="flag">-p</span> 8080:8080 \
+  <span class="flag">-e</span> TENCENTCLOUD_SECRET_ID=<span class="string">"your_secret_id"</span> \
+  <span class="flag">-e</span> TENCENTCLOUD_SECRET_KEY=<span class="string">"your_secret_key"</span> \
+  <span class="flag">-e</span> TENCENTCLOUD_REGION=<span class="string">"ap-beijing"</span> \
+  ai-sre-mcp-server:latest</pre>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>
+            AI SRE &copy; 2025 <a href="https://github.com/goops-top" target="_blank">goops-top</a>
+            &nbsp;&middot;&nbsp;
+            Built with MCP Protocol
+            &nbsp;&middot;&nbsp;
+            <a href="https://github.com/goops-top/ai-sre" target="_blank">Source Code</a>
+        </p>
+    </div>
+</footer>
+
+</body>
+</html>

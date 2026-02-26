@@ -1,0 +1,364 @@
+syntax = "proto3";
+
+package ai_sre.agent.v1;
+
+option go_package = "github.com/your-org/ai-sre/specs/proto/agent/v1;agentv1";
+option java_package = "com.yourorg.aisre.agent.v1";
+option java_multiple_files = true;
+option java_outer_classname = "AgentProto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+// Agent服务定义
+service AgentService {
+  // 获取Agent列表
+  rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse);
+  
+  // 获取Agent详情
+  rpc GetAgent(GetAgentRequest) returns (Agent);
+  
+  // 更新Agent配置
+  rpc UpdateAgent(UpdateAgentRequest) returns (Agent);
+  
+  // Agent健康检查
+  rpc HealthCheck(google.protobuf.Empty) returns (HealthCheckResponse);
+  
+  // Agent状态流
+  rpc WatchAgentStatus(WatchAgentStatusRequest) returns (stream AgentStatusEvent);
+}
+
+// 任务服务定义
+service TaskService {
+  // 创建任务
+  rpc CreateTask(CreateTaskRequest) returns (Task);
+  
+  // 获取任务列表
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  
+  // 获取任务详情
+  rpc GetTask(GetTaskRequest) returns (Task);
+  
+  // 更新任务
+  rpc UpdateTask(UpdateTaskRequest) returns (Task);
+  
+  // 取消任务
+  rpc CancelTask(CancelTaskRequest) returns (google.protobuf.Empty);
+  
+  // 获取任务日志
+  rpc GetTaskLogs(GetTaskLogsRequest) returns (GetTaskLogsResponse);
+  
+  // 任务状态流
+  rpc WatchTaskStatus(WatchTaskStatusRequest) returns (stream TaskStatusEvent);
+}
+
+// 知识库服务定义
+service KnowledgeService {
+  // 搜索知识库
+  rpc SearchKnowledge(SearchKnowledgeRequest) returns (SearchKnowledgeResponse);
+  
+  // 添加知识条目
+  rpc AddKnowledge(AddKnowledgeRequest) returns (KnowledgeItem);
+  
+  // 更新知识条目
+  rpc UpdateKnowledge(UpdateKnowledgeRequest) returns (KnowledgeItem);
+  
+  // 删除知识条目
+  rpc DeleteKnowledge(DeleteKnowledgeRequest) returns (google.protobuf.Empty);
+}
+
+// Agent相关消息定义
+message Agent {
+  string id = 1;
+  string name = 2;
+  AgentType type = 3;
+  AgentStatus status = 4;
+  string description = 5;
+  google.protobuf.Struct config = 6;
+  repeated string capabilities = 7;
+  AgentMetrics metrics = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+enum AgentType {
+  AGENT_TYPE_UNSPECIFIED = 0;
+  AGENT_TYPE_MASTER = 1;
+  AGENT_TYPE_MONITORING = 2;
+  AGENT_TYPE_DIAGNOSIS = 3;
+  AGENT_TYPE_AUTOMATION = 4;
+  AGENT_TYPE_KNOWLEDGE = 5;
+}
+
+enum AgentStatus {
+  AGENT_STATUS_UNSPECIFIED = 0;
+  AGENT_STATUS_ACTIVE = 1;
+  AGENT_STATUS_INACTIVE = 2;
+  AGENT_STATUS_BUSY = 3;
+  AGENT_STATUS_ERROR = 4;
+  AGENT_STATUS_MAINTENANCE = 5;
+}
+
+message AgentMetrics {
+  int64 tasks_completed = 1;
+  double success_rate = 2;
+  double avg_response_time = 3;
+  int64 total_requests = 4;
+  int64 failed_requests = 5;
+  google.protobuf.Timestamp last_activity = 6;
+}
+
+message ListAgentsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  AgentStatus status = 3;
+  AgentType type = 4;
+}
+
+message ListAgentsResponse {
+  repeated Agent agents = 1;
+  PaginationInfo pagination = 2;
+}
+
+message GetAgentRequest {
+  string agent_id = 1;
+}
+
+message UpdateAgentRequest {
+  string agent_id = 1;
+  string name = 2;
+  string description = 3;
+  google.protobuf.Struct config = 4;
+  AgentStatus status = 5;
+}
+
+message WatchAgentStatusRequest {
+  repeated string agent_ids = 1;
+}
+
+message AgentStatusEvent {
+  string agent_id = 1;
+  AgentStatus old_status = 2;
+  AgentStatus new_status = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  string message = 5;
+}
+
+// 任务相关消息定义
+message Task {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  TaskType type = 4;
+  TaskStatus status = 5;
+  TaskPriority priority = 6;
+  string agent_id = 7;
+  google.protobuf.Struct parameters = 8;
+  google.protobuf.Struct result = 9;
+  string error_message = 10;
+  int32 progress = 11;
+  int64 estimated_duration = 12;
+  int64 actual_duration = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+  google.protobuf.Timestamp started_at = 16;
+  google.protobuf.Timestamp completed_at = 17;
+  google.protobuf.Timestamp scheduled_at = 18;
+}
+
+enum TaskType {
+  TASK_TYPE_UNSPECIFIED = 0;
+  TASK_TYPE_MONITORING = 1;
+  TASK_TYPE_DIAGNOSIS = 2;
+  TASK_TYPE_AUTOMATION = 3;
+  TASK_TYPE_MAINTENANCE = 4;
+  TASK_TYPE_ANALYSIS = 5;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_PENDING = 1;
+  TASK_STATUS_RUNNING = 2;
+  TASK_STATUS_COMPLETED = 3;
+  TASK_STATUS_FAILED = 4;
+  TASK_STATUS_CANCELLED = 5;
+}
+
+enum TaskPriority {
+  TASK_PRIORITY_UNSPECIFIED = 0;
+  TASK_PRIORITY_LOW = 1;
+  TASK_PRIORITY_NORMAL = 2;
+  TASK_PRIORITY_HIGH = 3;
+  TASK_PRIORITY_URGENT = 4;
+}
+
+message CreateTaskRequest {
+  string name = 1;
+  string description = 2;
+  TaskType type = 3;
+  TaskPriority priority = 4;
+  string agent_id = 5;
+  google.protobuf.Struct parameters = 6;
+  google.protobuf.Timestamp scheduled_at = 7;
+}
+
+message ListTasksRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  TaskStatus status = 3;
+  TaskPriority priority = 4;
+  string agent_id = 5;
+  google.protobuf.Timestamp created_after = 6;
+  google.protobuf.Timestamp created_before = 7;
+}
+
+message ListTasksResponse {
+  repeated Task tasks = 1;
+  PaginationInfo pagination = 2;
+}
+
+message GetTaskRequest {
+  string task_id = 1;
+}
+
+message UpdateTaskRequest {
+  string task_id = 1;
+  TaskStatus status = 2;
+  TaskPriority priority = 3;
+  google.protobuf.Struct parameters = 4;
+  int32 progress = 5;
+  google.protobuf.Struct result = 6;
+  string error_message = 7;
+}
+
+message CancelTaskRequest {
+  string task_id = 1;
+  string reason = 2;
+}
+
+message GetTaskLogsRequest {
+  string task_id = 1;
+  LogLevel level = 2;
+  int32 limit = 3;
+  google.protobuf.Timestamp since = 4;
+}
+
+message GetTaskLogsResponse {
+  repeated LogEntry logs = 1;
+}
+
+message LogEntry {
+  google.protobuf.Timestamp timestamp = 1;
+  LogLevel level = 2;
+  string message = 3;
+  google.protobuf.Struct context = 4;
+}
+
+enum LogLevel {
+  LOG_LEVEL_UNSPECIFIED = 0;
+  LOG_LEVEL_DEBUG = 1;
+  LOG_LEVEL_INFO = 2;
+  LOG_LEVEL_WARNING = 3;
+  LOG_LEVEL_ERROR = 4;
+}
+
+message WatchTaskStatusRequest {
+  repeated string task_ids = 1;
+}
+
+message TaskStatusEvent {
+  string task_id = 1;
+  TaskStatus old_status = 2;
+  TaskStatus new_status = 3;
+  int32 progress = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  string message = 6;
+}
+
+// 知识库相关消息定义
+message KnowledgeItem {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  KnowledgeCategory category = 4;
+  repeated string tags = 5;
+  double score = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  string author = 9;
+  int32 usage_count = 10;
+}
+
+enum KnowledgeCategory {
+  KNOWLEDGE_CATEGORY_UNSPECIFIED = 0;
+  KNOWLEDGE_CATEGORY_TROUBLESHOOTING = 1;
+  KNOWLEDGE_CATEGORY_BEST_PRACTICES = 2;
+  KNOWLEDGE_CATEGORY_PROCEDURES = 3;
+  KNOWLEDGE_CATEGORY_CONFIGURATIONS = 4;
+}
+
+message SearchKnowledgeRequest {
+  string query = 1;
+  KnowledgeCategory category = 2;
+  repeated string tags = 3;
+  int32 limit = 4;
+  double min_score = 5;
+}
+
+message SearchKnowledgeResponse {
+  repeated KnowledgeItem items = 1;
+  int32 total_count = 2;
+  double max_score = 3;
+}
+
+message AddKnowledgeRequest {
+  string title = 1;
+  string content = 2;
+  KnowledgeCategory category = 3;
+  repeated string tags = 4;
+  string author = 5;
+}
+
+message UpdateKnowledgeRequest {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  KnowledgeCategory category = 4;
+  repeated string tags = 5;
+}
+
+message DeleteKnowledgeRequest {
+  string id = 1;
+}
+
+// 通用消息定义
+message PaginationInfo {
+  int32 page = 1;
+  int32 limit = 2;
+  int64 total = 3;
+  int32 pages = 4;
+  bool has_next = 5;
+  bool has_prev = 6;
+}
+
+message HealthCheckResponse {
+  HealthStatus status = 1;
+  string service = 2;
+  string version = 3;
+  int64 uptime = 4;
+  map<string, ComponentHealth> components = 5;
+}
+
+enum HealthStatus {
+  HEALTH_STATUS_UNSPECIFIED = 0;
+  HEALTH_STATUS_HEALTHY = 1;
+  HEALTH_STATUS_DEGRADED = 2;
+  HEALTH_STATUS_UNHEALTHY = 3;
+}
+
+message ComponentHealth {
+  HealthStatus status = 1;
+  string message = 2;
+  google.protobuf.Timestamp last_check = 3;
+}

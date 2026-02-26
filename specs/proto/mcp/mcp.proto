@@ -1,0 +1,784 @@
+syntax = "proto3";
+
+package ai_sre.mcp.v1;
+
+option go_package = "github.com/your-org/ai-sre/specs/proto/mcp/v1;mcpv1";
+option java_package = "com.yourorg.aisre.mcp.v1";
+option java_multiple_files = true;
+option java_outer_classname = "McpProto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+// MCP工具服务定义
+service MCPToolService {
+  // 获取可用工具列表
+  rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+  
+  // 获取工具详情
+  rpc GetTool(GetToolRequest) returns (Tool);
+  
+  // 调用工具
+  rpc CallTool(CallToolRequest) returns (CallToolResponse);
+  
+  // 批量调用工具
+  rpc BatchCallTools(BatchCallToolsRequest) returns (BatchCallToolsResponse);
+  
+  // 工具健康检查
+  rpc HealthCheck(google.protobuf.Empty) returns (HealthCheckResponse);
+  
+  // 工具调用流
+  rpc StreamToolCall(StreamToolCallRequest) returns (stream ToolCallEvent);
+}
+
+// 监控工具服务定义
+service MonitoringService {
+  // Prometheus查询
+  rpc PrometheusQuery(PrometheusQueryRequest) returns (PrometheusQueryResponse);
+  
+  // Prometheus范围查询
+  rpc PrometheusQueryRange(PrometheusRangeQueryRequest) returns (PrometheusQueryResponse);
+  
+  // 创建Grafana仪表板
+  rpc CreateDashboard(CreateDashboardRequest) returns (CreateDashboardResponse);
+  
+  // 获取仪表板列表
+  rpc ListDashboards(ListDashboardsRequest) returns (ListDashboardsResponse);
+  
+  // 获取告警规则
+  rpc GetAlertRules(GetAlertRulesRequest) returns (GetAlertRulesResponse);
+}
+
+// 云平台工具服务定义
+service CloudService {
+  // 列出EC2实例
+  rpc ListEC2Instances(ListEC2InstancesRequest) returns (ListEC2InstancesResponse);
+  
+  // 启动EC2实例
+  rpc StartEC2Instance(StartEC2InstanceRequest) returns (EC2OperationResponse);
+  
+  // 停止EC2实例
+  rpc StopEC2Instance(StopEC2InstanceRequest) returns (EC2OperationResponse);
+  
+  // 重启EC2实例
+  rpc RestartEC2Instance(RestartEC2InstanceRequest) returns (EC2OperationResponse);
+  
+  // 获取实例状态
+  rpc GetInstanceStatus(GetInstanceStatusRequest) returns (InstanceStatusResponse);
+  
+  // 列出负载均衡器
+  rpc ListLoadBalancers(ListLoadBalancersRequest) returns (ListLoadBalancersResponse);
+}
+
+// 容器工具服务定义
+service ContainerService {
+  // 列出Pod
+  rpc ListPods(ListPodsRequest) returns (ListPodsResponse);
+  
+  // 获取Pod详情
+  rpc GetPod(GetPodRequest) returns (Pod);
+  
+  // 扩缩容Deployment
+  rpc ScaleDeployment(ScaleDeploymentRequest) returns (ScaleDeploymentResponse);
+  
+  // 获取Pod日志
+  rpc GetPodLogs(GetPodLogsRequest) returns (GetPodLogsResponse);
+  
+  // 流式获取Pod日志
+  rpc StreamPodLogs(StreamPodLogsRequest) returns (stream LogEntry);
+  
+  // 执行Pod命令
+  rpc ExecPodCommand(ExecPodCommandRequest) returns (ExecPodCommandResponse);
+  
+  // 列出Deployment
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  
+  // 列出Service
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
+}
+
+// 数据库工具服务定义
+service DatabaseService {
+  // 执行查询
+  rpc ExecuteQuery(ExecuteQueryRequest) returns (ExecuteQueryResponse);
+  
+  // 测试连接
+  rpc TestConnection(TestConnectionRequest) returns (TestConnectionResponse);
+  
+  // 获取连接列表
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse);
+  
+  // 获取表结构
+  rpc GetTableSchema(GetTableSchemaRequest) returns (GetTableSchemaResponse);
+  
+  // 获取数据库统计信息
+  rpc GetDatabaseStats(GetDatabaseStatsRequest) returns (GetDatabaseStatsResponse);
+}
+
+// 基础消息定义
+message Tool {
+  string name = 1;
+  string description = 2;
+  ToolCategory category = 3;
+  google.protobuf.Struct parameters_schema = 4;
+  repeated ToolExample examples = 5;
+  ToolMetadata metadata = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+enum ToolCategory {
+  TOOL_CATEGORY_UNSPECIFIED = 0;
+  TOOL_CATEGORY_MONITORING = 1;
+  TOOL_CATEGORY_CLOUD = 2;
+  TOOL_CATEGORY_CONTAINER = 3;
+  TOOL_CATEGORY_DATABASE = 4;
+  TOOL_CATEGORY_NETWORK = 5;
+  TOOL_CATEGORY_SECURITY = 6;
+}
+
+message ToolExample {
+  string name = 1;
+  string description = 2;
+  google.protobuf.Struct arguments = 3;
+  google.protobuf.Struct expected_result = 4;
+}
+
+message ToolMetadata {
+  string version = 1;
+  string author = 2;
+  repeated string tags = 3;
+  int32 usage_count = 4;
+  double avg_execution_time = 5;
+  double success_rate = 6;
+}
+
+message ListToolsRequest {
+  ToolCategory category = 1;
+  repeated string tags = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message ListToolsResponse {
+  repeated Tool tools = 1;
+  PaginationInfo pagination = 2;
+}
+
+message GetToolRequest {
+  string tool_name = 1;
+}
+
+message CallToolRequest {
+  string tool_name = 1;
+  google.protobuf.Struct arguments = 2;
+  CallOptions options = 3;
+}
+
+message CallOptions {
+  int32 timeout_seconds = 1;
+  bool async = 2;
+  string callback_url = 3;
+  map<string, string> headers = 4;
+}
+
+message CallToolResponse {
+  bool success = 1;
+  google.protobuf.Struct result = 2;
+  string error_message = 3;
+  string error_code = 4;
+  ToolExecutionMetrics metrics = 5;
+  google.protobuf.Timestamp timestamp = 6;
+}
+
+message ToolExecutionMetrics {
+  double execution_time = 1;
+  int64 memory_used = 2;
+  int64 cpu_time = 3;
+  int32 network_calls = 4;
+}
+
+message BatchCallToolsRequest {
+  repeated CallToolRequest calls = 1;
+  bool fail_fast = 2;
+  int32 max_concurrency = 3;
+}
+
+message BatchCallToolsResponse {
+  repeated CallToolResponse results = 1;
+  int32 success_count = 2;
+  int32 failure_count = 3;
+}
+
+message StreamToolCallRequest {
+  string tool_name = 1;
+  google.protobuf.Struct arguments = 2;
+}
+
+message ToolCallEvent {
+  ToolCallEventType type = 1;
+  google.protobuf.Struct data = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string message = 4;
+}
+
+enum ToolCallEventType {
+  TOOL_CALL_EVENT_TYPE_UNSPECIFIED = 0;
+  TOOL_CALL_EVENT_TYPE_STARTED = 1;
+  TOOL_CALL_EVENT_TYPE_PROGRESS = 2;
+  TOOL_CALL_EVENT_TYPE_COMPLETED = 3;
+  TOOL_CALL_EVENT_TYPE_FAILED = 4;
+  TOOL_CALL_EVENT_TYPE_LOG = 5;
+}
+
+// 监控工具相关消息
+message PrometheusQueryRequest {
+  string query = 1;
+  google.protobuf.Timestamp time = 2;
+  int32 timeout = 3;
+}
+
+message PrometheusRangeQueryRequest {
+  string query = 1;
+  google.protobuf.Timestamp start = 2;
+  google.protobuf.Timestamp end = 3;
+  string step = 4;
+  int32 timeout = 5;
+}
+
+message PrometheusQueryResponse {
+  string result_type = 1;
+  repeated PrometheusResult results = 2;
+  map<string, string> stats = 3;
+}
+
+message PrometheusResult {
+  map<string, string> metric = 1;
+  repeated PrometheusValue values = 2;
+  PrometheusValue value = 3;
+}
+
+message PrometheusValue {
+  double timestamp = 1;
+  string value = 2;
+}
+
+message CreateDashboardRequest {
+  string title = 1;
+  string description = 2;
+  repeated string tags = 3;
+  repeated Panel panels = 4;
+  DashboardSettings settings = 5;
+}
+
+message Panel {
+  string title = 1;
+  string type = 2;
+  GridPos grid_pos = 3;
+  repeated Target targets = 4;
+  google.protobuf.Struct options = 5;
+}
+
+message GridPos {
+  int32 h = 1;
+  int32 w = 2;
+  int32 x = 3;
+  int32 y = 4;
+}
+
+message Target {
+  string expr = 1;
+  string legend_format = 2;
+  string ref_id = 3;
+  bool instant = 4;
+}
+
+message DashboardSettings {
+  string time_from = 1;
+  string time_to = 2;
+  string refresh = 3;
+  repeated string tags = 4;
+}
+
+message CreateDashboardResponse {
+  int32 id = 1;
+  string uid = 2;
+  string url = 3;
+  string status = 4;
+}
+
+message ListDashboardsRequest {
+  repeated string tags = 1;
+  string query = 2;
+  int32 limit = 3;
+}
+
+message ListDashboardsResponse {
+  repeated Dashboard dashboards = 1;
+}
+
+message Dashboard {
+  int32 id = 1;
+  string uid = 2;
+  string title = 3;
+  repeated string tags = 4;
+  string url = 5;
+  google.protobuf.Timestamp created = 6;
+  google.protobuf.Timestamp updated = 7;
+}
+
+message GetAlertRulesRequest {
+  string dashboard_uid = 1;
+  string panel_id = 2;
+}
+
+message GetAlertRulesResponse {
+  repeated AlertRule rules = 1;
+}
+
+message AlertRule {
+  string uid = 1;
+  string title = 2;
+  string condition = 3;
+  string frequency = 4;
+  repeated string notifications = 5;
+  string message = 6;
+}
+
+// 云平台工具相关消息
+message ListEC2InstancesRequest {
+  string region = 1;
+  repeated string instance_ids = 2;
+  repeated string states = 3;
+  map<string, string> tags = 4;
+  int32 max_results = 5;
+  string next_token = 6;
+}
+
+message ListEC2InstancesResponse {
+  repeated EC2Instance instances = 1;
+  string next_token = 2;
+}
+
+message EC2Instance {
+  string instance_id = 1;
+  string instance_type = 2;
+  string state = 3;
+  string public_ip = 4;
+  string private_ip = 5;
+  string public_dns = 6;
+  string private_dns = 7;
+  google.protobuf.Timestamp launch_time = 8;
+  string availability_zone = 9;
+  string vpc_id = 10;
+  string subnet_id = 11;
+  map<string, string> tags = 12;
+  repeated SecurityGroup security_groups = 13;
+}
+
+message SecurityGroup {
+  string group_id = 1;
+  string group_name = 2;
+}
+
+message StartEC2InstanceRequest {
+  string instance_id = 1;
+  string region = 2;
+}
+
+message StopEC2InstanceRequest {
+  string instance_id = 1;
+  string region = 2;
+  bool force = 3;
+}
+
+message RestartEC2InstanceRequest {
+  string instance_id = 1;
+  string region = 2;
+}
+
+message EC2OperationResponse {
+  string instance_id = 1;
+  string operation = 2;
+  string current_state = 3;
+  string previous_state = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+message GetInstanceStatusRequest {
+  string instance_id = 1;
+  string region = 2;
+}
+
+message InstanceStatusResponse {
+  string instance_id = 1;
+  string instance_state = 2;
+  string system_status = 3;
+  string instance_status = 4;
+  repeated StatusCheck status_checks = 5;
+}
+
+message StatusCheck {
+  string name = 1;
+  string status = 2;
+  repeated string details = 3;
+}
+
+message ListLoadBalancersRequest {
+  string region = 1;
+  repeated string names = 2;
+  int32 page_size = 3;
+  string marker = 4;
+}
+
+message ListLoadBalancersResponse {
+  repeated LoadBalancer load_balancers = 1;
+  string next_marker = 2;
+}
+
+message LoadBalancer {
+  string name = 1;
+  string dns_name = 2;
+  string scheme = 3;
+  string state = 4;
+  string type = 5;
+  repeated string availability_zones = 6;
+  repeated string security_groups = 7;
+  google.protobuf.Timestamp created_time = 8;
+}
+
+// 容器工具相关消息
+message ListPodsRequest {
+  string namespace = 1;
+  string label_selector = 2;
+  string field_selector = 3;
+  int32 limit = 4;
+  string continue = 5;
+}
+
+message ListPodsResponse {
+  repeated Pod pods = 1;
+  string continue = 2;
+  int32 remaining_item_count = 3;
+}
+
+message Pod {
+  string name = 1;
+  string namespace = 2;
+  string node_name = 3;
+  string phase = 4;
+  string pod_ip = 5;
+  string host_ip = 6;
+  google.protobuf.Timestamp start_time = 7;
+  map<string, string> labels = 8;
+  map<string, string> annotations = 9;
+  repeated Container containers = 10;
+  repeated PodCondition conditions = 11;
+}
+
+message Container {
+  string name = 1;
+  string image = 2;
+  ContainerState state = 3;
+  bool ready = 4;
+  int32 restart_count = 5;
+}
+
+message ContainerState {
+  ContainerStateType type = 1;
+  google.protobuf.Timestamp started_at = 2;
+  google.protobuf.Timestamp finished_at = 3;
+  string reason = 4;
+  string message = 5;
+  int32 exit_code = 6;
+}
+
+enum ContainerStateType {
+  CONTAINER_STATE_TYPE_UNSPECIFIED = 0;
+  CONTAINER_STATE_TYPE_WAITING = 1;
+  CONTAINER_STATE_TYPE_RUNNING = 2;
+  CONTAINER_STATE_TYPE_TERMINATED = 3;
+}
+
+message PodCondition {
+  string type = 1;
+  string status = 2;
+  google.protobuf.Timestamp last_probe_time = 3;
+  google.protobuf.Timestamp last_transition_time = 4;
+  string reason = 5;
+  string message = 6;
+}
+
+message GetPodRequest {
+  string name = 1;
+  string namespace = 2;
+}
+
+message ScaleDeploymentRequest {
+  string name = 1;
+  string namespace = 2;
+  int32 replicas = 3;
+}
+
+message ScaleDeploymentResponse {
+  string name = 1;
+  string namespace = 2;
+  int32 current_replicas = 3;
+  int32 desired_replicas = 4;
+  int32 ready_replicas = 5;
+}
+
+message GetPodLogsRequest {
+  string name = 1;
+  string namespace = 2;
+  string container = 3;
+  int32 tail_lines = 4;
+  google.protobuf.Timestamp since_time = 5;
+  bool follow = 6;
+  bool timestamps = 7;
+}
+
+message GetPodLogsResponse {
+  string logs = 1;
+}
+
+message StreamPodLogsRequest {
+  string name = 1;
+  string namespace = 2;
+  string container = 3;
+  bool follow = 4;
+  bool timestamps = 5;
+}
+
+message LogEntry {
+  google.protobuf.Timestamp timestamp = 1;
+  string message = 2;
+  string level = 3;
+  string source = 4;
+}
+
+message ExecPodCommandRequest {
+  string name = 1;
+  string namespace = 2;
+  string container = 3;
+  repeated string command = 4;
+  bool stdin = 5;
+  bool stdout = 6;
+  bool stderr = 7;
+  bool tty = 8;
+}
+
+message ExecPodCommandResponse {
+  string stdout = 1;
+  string stderr = 2;
+  int32 exit_code = 3;
+}
+
+message ListDeploymentsRequest {
+  string namespace = 1;
+  string label_selector = 2;
+  int32 limit = 3;
+}
+
+message ListDeploymentsResponse {
+  repeated Deployment deployments = 1;
+}
+
+message Deployment {
+  string name = 1;
+  string namespace = 2;
+  int32 replicas = 3;
+  int32 ready_replicas = 4;
+  int32 available_replicas = 5;
+  map<string, string> labels = 6;
+  google.protobuf.Timestamp creation_timestamp = 7;
+}
+
+message ListServicesRequest {
+  string namespace = 1;
+  string label_selector = 2;
+  int32 limit = 3;
+}
+
+message ListServicesResponse {
+  repeated Service services = 1;
+}
+
+message Service {
+  string name = 1;
+  string namespace = 2;
+  string type = 3;
+  string cluster_ip = 4;
+  repeated string external_ips = 5;
+  repeated ServicePort ports = 6;
+  map<string, string> labels = 7;
+  map<string, string> selector = 8;
+}
+
+message ServicePort {
+  string name = 1;
+  int32 port = 2;
+  int32 target_port = 3;
+  string protocol = 4;
+  int32 node_port = 5;
+}
+
+// 数据库工具相关消息
+message ExecuteQueryRequest {
+  string connection_id = 1;
+  string query = 2;
+  repeated google.protobuf.Struct parameters = 3;
+  int32 limit = 4;
+  int32 timeout = 5;
+}
+
+message ExecuteQueryResponse {
+  repeated string columns = 1;
+  repeated QueryRow rows = 2;
+  int32 row_count = 3;
+  double execution_time = 4;
+  string query_plan = 5;
+}
+
+message QueryRow {
+  repeated google.protobuf.Struct values = 1;
+}
+
+message TestConnectionRequest {
+  string connection_id = 1;
+  int32 timeout = 2;
+}
+
+message TestConnectionResponse {
+  bool success = 1;
+  string message = 2;
+  double latency = 3;
+  string version = 4;
+}
+
+message ListConnectionsRequest {
+  DatabaseType type = 1;
+  string status = 2;
+}
+
+message ListConnectionsResponse {
+  repeated DatabaseConnection connections = 1;
+}
+
+message DatabaseConnection {
+  string id = 1;
+  string name = 2;
+  DatabaseType type = 3;
+  string host = 4;
+  int32 port = 5;
+  string database = 6;
+  string status = 7;
+  google.protobuf.Timestamp last_used = 8;
+  ConnectionStats stats = 9;
+}
+
+enum DatabaseType {
+  DATABASE_TYPE_UNSPECIFIED = 0;
+  DATABASE_TYPE_POSTGRESQL = 1;
+  DATABASE_TYPE_MYSQL = 2;
+  DATABASE_TYPE_MONGODB = 3;
+  DATABASE_TYPE_REDIS = 4;
+  DATABASE_TYPE_ELASTICSEARCH = 5;
+}
+
+message ConnectionStats {
+  int64 total_queries = 1;
+  double avg_query_time = 2;
+  int32 active_connections = 3;
+  int32 max_connections = 4;
+}
+
+message GetTableSchemaRequest {
+  string connection_id = 1;
+  string table_name = 2;
+  string schema_name = 3;
+}
+
+message GetTableSchemaResponse {
+  string table_name = 1;
+  string schema_name = 2;
+  repeated TableColumn columns = 3;
+  repeated TableIndex indexes = 4;
+  repeated TableConstraint constraints = 5;
+}
+
+message TableColumn {
+  string name = 1;
+  string data_type = 2;
+  bool nullable = 3;
+  string default_value = 4;
+  bool primary_key = 5;
+  string comment = 6;
+}
+
+message TableIndex {
+  string name = 1;
+  repeated string columns = 2;
+  bool unique = 3;
+  string type = 4;
+}
+
+message TableConstraint {
+  string name = 1;
+  string type = 2;
+  repeated string columns = 3;
+  string reference_table = 4;
+  repeated string reference_columns = 5;
+}
+
+message GetDatabaseStatsRequest {
+  string connection_id = 1;
+}
+
+message GetDatabaseStatsResponse {
+  int64 total_size = 1;
+  int32 table_count = 2;
+  int32 index_count = 3;
+  int64 total_rows = 4;
+  repeated TableStats table_stats = 5;
+}
+
+message TableStats {
+  string name = 1;
+  int64 size = 2;
+  int64 row_count = 3;
+  int32 index_count = 4;
+}
+
+// 通用消息定义
+message PaginationInfo {
+  int32 page = 1;
+  int32 limit = 2;
+  int64 total = 3;
+  int32 pages = 4;
+  bool has_next = 5;
+  bool has_prev = 6;
+}
+
+message HealthCheckResponse {
+  HealthStatus status = 1;
+  string service = 2;
+  string version = 3;
+  int64 uptime = 4;
+  map<string, ComponentHealth> components = 5;
+}
+
+enum HealthStatus {
+  HEALTH_STATUS_UNSPECIFIED = 0;
+  HEALTH_STATUS_HEALTHY = 1;
+  HEALTH_STATUS_DEGRADED = 2;
+  HEALTH_STATUS_UNHEALTHY = 3;
+}
+
+message ComponentHealth {
+  HealthStatus status = 1;
+  string message = 2;
+  google.protobuf.Timestamp last_check = 3;
+  double response_time = 4;
+}

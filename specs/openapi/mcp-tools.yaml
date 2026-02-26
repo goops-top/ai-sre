@@ -1,0 +1,995 @@
+openapi: 3.0.3
+info:
+  title: AI SRE MCP Tools API
+  description: |
+    AI SRE分身助理MCP工具集API规范
+    
+    基于Golang + Gin框架构建的高性能工具服务集合，提供监控、云平台、容器、数据库等原子化运维工具。
+    
+    ## 工具服务
+    - 监控工具：Prometheus查询、Grafana管理
+    - 云平台工具：AWS/Azure/GCP资源管理
+    - 容器工具：Kubernetes集群管理
+    - 数据库工具：数据库连接和查询
+    
+    ## MCP协议
+    遵循Model Context Protocol标准，提供统一的工具调用接口。
+  version: 1.0.0
+  contact:
+    name: AI SRE MCP Team
+    email: mcp@your-org.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8081
+    description: 监控工具服务 (开发环境)
+  - url: http://localhost:8082
+    description: 云平台工具服务 (开发环境)
+  - url: http://localhost:8083
+    description: 容器工具服务 (开发环境)
+  - url: http://localhost:8084
+    description: 数据库工具服务 (开发环境)
+
+security:
+  - apiKeyAuth: []
+
+paths:
+  # 通用健康检查
+  /health:
+    get:
+      tags:
+        - System
+      summary: 服务健康检查
+      description: 检查MCP工具服务运行状态
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: 服务健康
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: 服务异常
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # MCP协议端点
+  /mcp/tools:
+    get:
+      tags:
+        - MCP
+      summary: 获取可用工具列表
+      description: 返回当前服务提供的所有MCP工具
+      operationId: listTools
+      responses:
+        '200':
+          description: 成功返回工具列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolsListResponse'
+
+  /mcp/tools/{toolName}/call:
+    post:
+      tags:
+        - MCP
+      summary: 调用MCP工具
+      description: 执行指定的MCP工具
+      operationId: callTool
+      parameters:
+        - name: toolName
+          in: path
+          required: true
+          description: 工具名称
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolCallRequest'
+      responses:
+        '200':
+          description: 工具执行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolCallResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: 工具不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # 监控工具API
+  /api/v1/monitoring/query:
+    post:
+      tags:
+        - Monitoring
+      summary: Prometheus查询
+      description: 执行Prometheus PromQL查询
+      operationId: prometheusQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrometheusQueryRequest'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrometheusQueryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/monitoring/query_range:
+    post:
+      tags:
+        - Monitoring
+      summary: Prometheus范围查询
+      description: 执行Prometheus时间范围查询
+      operationId: prometheusQueryRange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrometheusRangeQueryRequest'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrometheusQueryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/monitoring/dashboards:
+    post:
+      tags:
+        - Monitoring
+      summary: 创建Grafana仪表板
+      description: 在Grafana中创建新的仪表板
+      operationId: createDashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardCreateRequest'
+      responses:
+        '201':
+          description: 仪表板创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # 云平台工具API
+  /api/v1/aws/instances:
+    get:
+      tags:
+        - Cloud
+      summary: 列出EC2实例
+      description: 获取AWS EC2实例列表
+      operationId: listEC2Instances
+      parameters:
+        - name: region
+          in: query
+          description: AWS区域
+          schema:
+            type: string
+        - name: state
+          in: query
+          description: 实例状态过滤
+          schema:
+            type: string
+            enum: [pending, running, shutting-down, terminated, stopping, stopped]
+      responses:
+        '200':
+          description: 成功返回实例列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EC2InstancesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/aws/instances/{instanceId}/start:
+    post:
+      tags:
+        - Cloud
+      summary: 启动EC2实例
+      description: 启动指定的EC2实例
+      operationId: startEC2Instance
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          description: EC2实例ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 实例启动成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EC2OperationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/aws/instances/{instanceId}/stop:
+    post:
+      tags:
+        - Cloud
+      summary: 停止EC2实例
+      description: 停止指定的EC2实例
+      operationId: stopEC2Instance
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          description: EC2实例ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 实例停止成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EC2OperationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # 容器工具API
+  /api/v1/k8s/namespaces/{namespace}/pods:
+    get:
+      tags:
+        - Container
+      summary: 列出Pod
+      description: 获取指定命名空间下的Pod列表
+      operationId: listPods
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          description: Kubernetes命名空间
+          schema:
+            type: string
+        - name: labelSelector
+          in: query
+          description: 标签选择器
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功返回Pod列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PodsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/k8s/namespaces/{namespace}/deployments/{name}/scale:
+    post:
+      tags:
+        - Container
+      summary: 扩缩容Deployment
+      description: 调整Deployment的副本数量
+      operationId: scaleDeployment
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          description: Kubernetes命名空间
+          schema:
+            type: string
+        - name: name
+          in: path
+          required: true
+          description: Deployment名称
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaleRequest'
+      responses:
+        '200':
+          description: 扩缩容成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaleResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/k8s/namespaces/{namespace}/pods/{name}/logs:
+    get:
+      tags:
+        - Container
+      summary: 获取Pod日志
+      description: 获取指定Pod的日志
+      operationId: getPodLogs
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          description: Kubernetes命名空间
+          schema:
+            type: string
+        - name: name
+          in: path
+          required: true
+          description: Pod名称
+          schema:
+            type: string
+        - name: container
+          in: query
+          description: 容器名称
+          schema:
+            type: string
+        - name: tailLines
+          in: query
+          description: 返回最后N行日志
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 100
+      responses:
+        '200':
+          description: 成功返回日志
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PodLogsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # 数据库工具API
+  /api/v1/database/query:
+    post:
+      tags:
+        - Database
+      summary: 执行数据库查询
+      description: 在指定数据库连接上执行SQL查询
+      operationId: executeQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatabaseQueryRequest'
+      responses:
+        '200':
+          description: 查询执行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseQueryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/database/connections:
+    get:
+      tags:
+        - Database
+      summary: 获取数据库连接列表
+      description: 获取可用的数据库连接配置
+      operationId: listConnections
+      responses:
+        '200':
+          description: 成功返回连接列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseConnectionsResponse'
+
+  /api/v1/database/connections/{connectionId}/test:
+    post:
+      tags:
+        - Database
+      summary: 测试数据库连接
+      description: 测试指定数据库连接的可用性
+      operationId: testConnection
+      parameters:
+        - name: connectionId
+          in: path
+          required: true
+          description: 数据库连接ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 连接测试成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionTestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    InternalServerError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # 基础响应模型
+    BaseResponse:
+      type: object
+      required:
+        - success
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        timestamp:
+          type: string
+          format: date-time
+          description: 响应时间戳
+        request_id:
+          type: string
+          description: 请求追踪ID
+
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - error
+          properties:
+            error:
+              type: object
+              required:
+                - code
+                - message
+              properties:
+                code:
+                  type: string
+                  description: 错误码
+                message:
+                  type: string
+                  description: 错误描述
+                details:
+                  type: object
+                  description: 错误详细信息
+
+    HealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - status
+            - service
+          properties:
+            status:
+              type: string
+              enum: [healthy, unhealthy]
+            service:
+              type: string
+              description: 服务名称
+            version:
+              type: string
+              description: 服务版本
+            uptime:
+              type: integer
+              description: 运行时间(秒)
+
+    # MCP协议相关
+    ToolsListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - tools
+          properties:
+            tools:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tool'
+
+    Tool:
+      type: object
+      required:
+        - name
+        - description
+        - parameters
+      properties:
+        name:
+          type: string
+          description: 工具名称
+        description:
+          type: string
+          description: 工具描述
+        parameters:
+          type: object
+          description: 工具参数Schema
+        examples:
+          type: array
+          items:
+            type: object
+          description: 使用示例
+
+    ToolCallRequest:
+      type: object
+      required:
+        - arguments
+      properties:
+        arguments:
+          type: object
+          description: 工具调用参数
+
+    ToolCallResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - result
+          properties:
+            result:
+              type: object
+              description: 工具执行结果
+            metadata:
+              type: object
+              description: 执行元数据
+
+    # 监控工具相关
+    PrometheusQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: PromQL查询语句
+        time:
+          type: string
+          format: date-time
+          description: 查询时间点
+
+    PrometheusRangeQueryRequest:
+      type: object
+      required:
+        - query
+        - start
+        - end
+        - step
+      properties:
+        query:
+          type: string
+          description: PromQL查询语句
+        start:
+          type: string
+          format: date-time
+          description: 开始时间
+        end:
+          type: string
+          format: date-time
+          description: 结束时间
+        step:
+          type: string
+          description: 查询步长
+
+    PrometheusQueryResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: object
+              properties:
+                resultType:
+                  type: string
+                  enum: [matrix, vector, scalar, string]
+                result:
+                  type: array
+                  items:
+                    type: object
+
+    DashboardCreateRequest:
+      type: object
+      required:
+        - title
+        - panels
+      properties:
+        title:
+          type: string
+          description: 仪表板标题
+        description:
+          type: string
+          description: 仪表板描述
+        tags:
+          type: array
+          items:
+            type: string
+          description: 标签
+        panels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Panel'
+
+    Panel:
+      type: object
+      required:
+        - title
+        - type
+        - targets
+      properties:
+        title:
+          type: string
+          description: 面板标题
+        type:
+          type: string
+          description: 面板类型
+        targets:
+          type: array
+          items:
+            type: object
+          description: 数据源查询
+
+    DashboardResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - dashboard
+          properties:
+            dashboard:
+              type: object
+              properties:
+                id:
+                  type: integer
+                uid:
+                  type: string
+                title:
+                  type: string
+                url:
+                  type: string
+
+    # 云平台工具相关
+    EC2InstancesResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - instances
+          properties:
+            instances:
+              type: array
+              items:
+                $ref: '#/components/schemas/EC2Instance'
+
+    EC2Instance:
+      type: object
+      required:
+        - instance_id
+        - state
+        - instance_type
+        - launch_time
+      properties:
+        instance_id:
+          type: string
+          description: 实例ID
+        state:
+          type: string
+          description: 实例状态
+        instance_type:
+          type: string
+          description: 实例类型
+        launch_time:
+          type: string
+          format: date-time
+          description: 启动时间
+        public_ip:
+          type: string
+          description: 公网IP
+        private_ip:
+          type: string
+          description: 私网IP
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: 实例标签
+
+    EC2OperationResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - instance_id
+            - operation
+            - status
+          properties:
+            instance_id:
+              type: string
+            operation:
+              type: string
+              enum: [start, stop, restart, terminate]
+            status:
+              type: string
+              description: 操作状态
+
+    # 容器工具相关
+    PodsResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - pods
+          properties:
+            pods:
+              type: array
+              items:
+                $ref: '#/components/schemas/Pod'
+
+    Pod:
+      type: object
+      required:
+        - name
+        - namespace
+        - status
+        - created_at
+      properties:
+        name:
+          type: string
+          description: Pod名称
+        namespace:
+          type: string
+          description: 命名空间
+        status:
+          type: string
+          description: Pod状态
+        node:
+          type: string
+          description: 运行节点
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+          description: 标签
+        containers:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              image:
+                type: string
+              ready:
+                type: boolean
+
+    ScaleRequest:
+      type: object
+      required:
+        - replicas
+      properties:
+        replicas:
+          type: integer
+          minimum: 0
+          description: 目标副本数
+
+    ScaleResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - deployment
+            - current_replicas
+            - desired_replicas
+          properties:
+            deployment:
+              type: string
+            current_replicas:
+              type: integer
+            desired_replicas:
+              type: integer
+
+    PodLogsResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - logs
+          properties:
+            logs:
+              type: string
+              description: Pod日志内容
+
+    # 数据库工具相关
+    DatabaseQueryRequest:
+      type: object
+      required:
+        - connection_id
+        - query
+      properties:
+        connection_id:
+          type: string
+          description: 数据库连接ID
+        query:
+          type: string
+          description: SQL查询语句
+        parameters:
+          type: array
+          items:
+            type: object
+          description: 查询参数
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 1000
+          description: 结果限制
+
+    DatabaseQueryResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - columns
+            - rows
+            - row_count
+          properties:
+            columns:
+              type: array
+              items:
+                type: string
+              description: 列名
+            rows:
+              type: array
+              items:
+                type: array
+                items:
+                  type: object
+              description: 查询结果
+            row_count:
+              type: integer
+              description: 返回行数
+            execution_time:
+              type: number
+              format: float
+              description: 执行时间(秒)
+
+    DatabaseConnectionsResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - connections
+          properties:
+            connections:
+              type: array
+              items:
+                $ref: '#/components/schemas/DatabaseConnection'
+
+    DatabaseConnection:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - status
+      properties:
+        id:
+          type: string
+          description: 连接ID
+        name:
+          type: string
+          description: 连接名称
+        type:
+          type: string
+          enum: [postgresql, mysql, mongodb, redis]
+          description: 数据库类型
+        host:
+          type: string
+          description: 主机地址
+        port:
+          type: integer
+          description: 端口号
+        database:
+          type: string
+          description: 数据库名
+        status:
+          type: string
+          enum: [connected, disconnected, error]
+          description: 连接状态
+
+    ConnectionTestResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - connection_id
+            - status
+          properties:
+            connection_id:
+              type: string
+            status:
+              type: string
+              enum: [success, failed]
+            message:
+              type: string
+              description: 测试结果消息
+            latency:
+              type: number
+              format: float
+              description: 连接延迟(毫秒)

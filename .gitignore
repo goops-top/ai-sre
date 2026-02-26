@@ -1,0 +1,47 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Go
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Build artifacts
+*.log
+tmp/
+
+# CodeBuddy
+.codebuddy/
+
+# Specify
+.specify/
+
+# Backup files
+*.backup
+*.emoji-backup
+
+# Spectral
+.spectral.yaml
+
+# Test files
+test_*.json
+test_*.sh
+test_*.md

@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-sre-mcp-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # MCP服务器配置
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8080
+      - MCP_TRANSPORT=http
+      - MCP_LOG_LEVEL=info
+      - MCP_LOG_FORMAT=json
+      - MCP_ENABLE_TOOLS=true
+      - MCP_ENABLE_LOGGING=true
+      
+      # 腾讯云认证配置 (需要在部署时设置)
+      # - TENCENTCLOUD_SECRET_ID=your_secret_id
+      # - TENCENTCLOUD_SECRET_KEY=your_secret_key
+      # - TENCENTCLOUD_REGION=ap-beijing
+      
+      # 认证配置 (可选)
+      # - MCP_AUTH_ENABLED=true
+      # - MCP_AUTH_BEARER_TOKEN=your_bearer_token
+      
+      # 超时配置
+      - MCP_REQUEST_TIMEOUT=60s
+      - MCP_TOOL_TIMEOUT=30s
+      - MCP_READ_TIMEOUT=30s
+      - MCP_WRITE_TIMEOUT=30s
+      
+    volumes:
+      # 挂载日志目录 (可选)
+      - ./logs:/app/logs
+      # 挂载配置目录 (可选)
+      - ./configs:/app/configs
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    # 网络配置
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge

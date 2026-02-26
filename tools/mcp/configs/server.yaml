@@ -1,0 +1,93 @@
+# AI SRE MCP Server 配置文件
+# 这是一个示例配置文件，展示了所有可用的配置选项
+
+# 服务器配置
+server:
+  # 服务器监听地址
+  host: "localhost"
+  
+  # 服务器监听端口
+  port: 8080
+  
+  # 读取超时时间
+  read_timeout: "30s"
+  
+  # 写入超时时间
+  write_timeout: "30s"
+  
+  # 空闲超时时间
+  idle_timeout: "60s"
+  
+  # 优雅关闭超时时间
+  shutdown_timeout: "10s"
+
+# 日志配置
+logging:
+  # 日志级别: debug, info, warn, error
+  level: "info"
+  
+  # 日志格式: json, text
+  format: "json"
+  
+  # 日志输出文件路径，空则输出到stdout
+  file: ""
+  
+  # 是否启用日志轮转
+  rotate: true
+  
+  # 日志文件最大大小 (MB)
+  max_size: 100
+  
+  # 保留的日志文件数量
+  max_backups: 3
+  
+  # 日志文件保留天数
+  max_age: 7
+
+# MCP协议配置
+mcp:
+  # 服务器名称
+  name: "ai-sre-mcp-server"
+  
+  # 服务器版本
+  version: "1.0.0"
+  
+  # 协议版本
+  protocol_version: "2024-11-05"
+  
+  # 请求超时时间
+  request_timeout: "60s"
+  
+  # 最大并发请求数
+  max_concurrent_requests: 100
+  
+  # 支持的功能特性
+  capabilities:
+    # 是否支持工具调用
+    tools: true
+    
+    # 是否支持资源访问
+    resources: false
+    
+    # 是否支持提示模板
+    prompts: false
+    
+    # 是否支持日志记录
+    logging: true
+
+# 工具配置
+tools:
+  # 工具执行超时时间
+  execution_timeout: "30s"
+  
+  # 是否启用工具缓存
+  enable_cache: false
+  
+  # 缓存过期时间
+  cache_expiry: "5m"
+  
+  # 允许的工具列表，空则允许所有
+  allowed_tools: []
+  
+  # 禁用的工具列表
+  disabled_tools: []

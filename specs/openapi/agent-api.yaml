@@ -1,0 +1,979 @@
+openapi: 3.0.3
+info:
+  title: AI SRE Agent API
+  description: |
+    AI SRE分身助理Agent编排层API规范
+    
+    提供智能化的SRE运维服务，包括任务管理、Agent编排、监控诊断等核心功能。
+    
+    ## 核心功能
+    - 任务创建和管理
+    - Agent状态监控
+    - 工作流编排
+    - 知识库查询
+    - 告警处理
+    
+    ## 认证方式
+    - Bearer Token认证
+    - API Key认证
+    - OAuth 2.0 (企业微信集成)
+  version: 1.0.0
+  contact:
+    name: AI SRE Team
+    email: ai-sre@your-org.com
+    url: https://github.com/your-org/ai-sre
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: 开发环境
+  - url: https://api-staging.ai-sre.com
+    description: 测试环境
+  - url: https://api.ai-sre.com
+    description: 生产环境
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+paths:
+  # 健康检查
+  /health:
+    get:
+      tags:
+        - System
+      summary: 系统健康检查
+      description: 检查系统运行状态和各组件健康状况
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: 系统健康
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: 系统异常
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Agent管理
+  /api/v1/agents:
+    get:
+      tags:
+        - Agents
+      summary: 获取Agent列表
+      description: 获取所有可用的Agent及其状态信息
+      operationId: listAgents
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          description: 按状态过滤Agent
+          schema:
+            $ref: '#/components/schemas/AgentStatus'
+        - name: type
+          in: query
+          description: 按类型过滤Agent
+          schema:
+            $ref: '#/components/schemas/AgentType'
+      responses:
+        '200':
+          description: 成功返回Agent列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/agents/{agentId}:
+    get:
+      tags:
+        - Agents
+      summary: 获取Agent详情
+      description: 获取指定Agent的详细信息和运行状态
+      operationId: getAgent
+      parameters:
+        - $ref: '#/components/parameters/AgentIdParam'
+      responses:
+        '200':
+          description: 成功返回Agent详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - Agents
+      summary: 更新Agent配置
+      description: 更新指定Agent的配置信息
+      operationId: updateAgent
+      parameters:
+        - $ref: '#/components/parameters/AgentIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentUpdateRequest'
+      responses:
+        '200':
+          description: 成功更新Agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # 任务管理
+  /api/v1/tasks:
+    get:
+      tags:
+        - Tasks
+      summary: 获取任务列表
+      description: 获取任务列表，支持分页和过滤
+      operationId: listTasks
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          description: 按状态过滤任务
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - name: priority
+          in: query
+          description: 按优先级过滤任务
+          schema:
+            $ref: '#/components/schemas/TaskPriority'
+        - name: agent_id
+          in: query
+          description: 按Agent ID过滤任务
+          schema:
+            type: string
+        - name: created_after
+          in: query
+          description: 创建时间过滤（开始时间）
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          in: query
+          description: 创建时间过滤（结束时间）
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功返回任务列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Tasks
+      summary: 创建新任务
+      description: 创建一个新的运维任务
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+      responses:
+        '201':
+          description: 任务创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/tasks/{taskId}:
+    get:
+      tags:
+        - Tasks
+      summary: 获取任务详情
+      description: 获取指定任务的详细信息和执行状态
+      operationId: getTask
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '200':
+          description: 成功返回任务详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - Tasks
+      summary: 更新任务状态
+      description: 更新任务的状态或配置
+      operationId: updateTask
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdateRequest'
+      responses:
+        '200':
+          description: 任务更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Tasks
+      summary: 取消任务
+      description: 取消指定的任务
+      operationId: cancelTask
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '204':
+          description: 任务取消成功
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 任务状态不允许取消
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/tasks/{taskId}/logs:
+    get:
+      tags:
+        - Tasks
+      summary: 获取任务日志
+      description: 获取任务执行的详细日志
+      operationId: getTaskLogs
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+        - name: level
+          in: query
+          description: 日志级别过滤
+          schema:
+            type: string
+            enum: [debug, info, warning, error]
+        - name: limit
+          in: query
+          description: 返回日志条数限制
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+      responses:
+        '200':
+          description: 成功返回任务日志
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskLogsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # 知识库查询
+  /api/v1/knowledge/search:
+    post:
+      tags:
+        - Knowledge
+      summary: 知识库搜索
+      description: 在知识库中搜索相关信息
+      operationId: searchKnowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeSearchRequest'
+      responses:
+        '200':
+          description: 搜索成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeSearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # 告警管理
+  /api/v1/alerts:
+    get:
+      tags:
+        - Alerts
+      summary: 获取告警列表
+      description: 获取系统告警信息
+      operationId: listAlerts
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: severity
+          in: query
+          description: 按严重程度过滤
+          schema:
+            $ref: '#/components/schemas/AlertSeverity'
+        - name: status
+          in: query
+          description: 按状态过滤
+          schema:
+            $ref: '#/components/schemas/AlertStatus'
+      responses:
+        '200':
+          description: 成功返回告警列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/alerts/{alertId}/acknowledge:
+    post:
+      tags:
+        - Alerts
+      summary: 确认告警
+      description: 确认指定的告警
+      operationId: acknowledgeAlert
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          description: 告警ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertAcknowledgeRequest'
+      responses:
+        '200':
+          description: 告警确认成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: 页码
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    
+    LimitParam:
+      name: limit
+      in: query
+      description: 每页数量
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    
+    AgentIdParam:
+      name: agentId
+      in: path
+      required: true
+      description: Agent唯一标识符
+      schema:
+        type: string
+        pattern: '^[a-zA-Z0-9_-]+$'
+    
+    TaskIdParam:
+      name: taskId
+      in: path
+      required: true
+      description: 任务唯一标识符
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Unauthorized:
+      description: 未授权访问
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    InternalServerError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # 基础响应模型
+    BaseResponse:
+      type: object
+      required:
+        - success
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        timestamp:
+          type: string
+          format: date-time
+          description: 响应时间戳
+        request_id:
+          type: string
+          description: 请求追踪ID
+
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - error
+          properties:
+            error:
+              type: object
+              required:
+                - code
+                - message
+              properties:
+                code:
+                  type: string
+                  description: 错误码
+                message:
+                  type: string
+                  description: 错误描述
+                details:
+                  type: object
+                  description: 错误详细信息
+
+    # 健康检查
+    HealthStatus:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - status
+            - components
+          properties:
+            status:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+              description: 整体健康状态
+            components:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [up, down, unknown]
+                  message:
+                    type: string
+                  last_check:
+                    type: string
+                    format: date-time
+
+    # Agent相关模型
+    AgentStatus:
+      type: string
+      enum: [active, inactive, busy, error, maintenance]
+      description: Agent状态
+
+    AgentType:
+      type: string
+      enum: [master, monitoring, diagnosis, automation, knowledge]
+      description: Agent类型
+
+    Agent:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          description: Agent唯一标识符
+        name:
+          type: string
+          description: Agent名称
+        type:
+          $ref: '#/components/schemas/AgentType'
+        status:
+          $ref: '#/components/schemas/AgentStatus'
+        description:
+          type: string
+          description: Agent描述
+        config:
+          type: object
+          description: Agent配置信息
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: Agent能力列表
+        metrics:
+          type: object
+          properties:
+            tasks_completed:
+              type: integer
+              description: 已完成任务数
+            success_rate:
+              type: number
+              format: float
+              description: 成功率
+            avg_response_time:
+              type: number
+              format: float
+              description: 平均响应时间(秒)
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AgentListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - data
+            - pagination
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Agent'
+            pagination:
+              $ref: '#/components/schemas/PaginationInfo'
+
+    AgentUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        config:
+          type: object
+        status:
+          $ref: '#/components/schemas/AgentStatus'
+
+    # 任务相关模型
+    TaskStatus:
+      type: string
+      enum: [pending, running, completed, failed, cancelled]
+      description: 任务状态
+
+    TaskPriority:
+      type: string
+      enum: [low, normal, high, urgent]
+      description: 任务优先级
+
+    TaskType:
+      type: string
+      enum: [monitoring, diagnosis, automation, maintenance, analysis]
+      description: 任务类型
+
+    Task:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - status
+        - priority
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 任务唯一标识符
+        name:
+          type: string
+          description: 任务名称
+        description:
+          type: string
+          description: 任务描述
+        type:
+          $ref: '#/components/schemas/TaskType'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        agent_id:
+          type: string
+          description: 执行任务的Agent ID
+        parameters:
+          type: object
+          description: 任务参数
+        result:
+          type: object
+          description: 任务执行结果
+        error_message:
+          type: string
+          description: 错误信息
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: 任务进度百分比
+        estimated_duration:
+          type: integer
+          description: 预估执行时间(秒)
+        actual_duration:
+          type: integer
+          description: 实际执行时间(秒)
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    TaskCreateRequest:
+      type: object
+      required:
+        - name
+        - type
+        - priority
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        type:
+          $ref: '#/components/schemas/TaskType'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        agent_id:
+          type: string
+          description: 指定执行Agent，为空则自动分配
+        parameters:
+          type: object
+          description: 任务参数
+        scheduled_at:
+          type: string
+          format: date-time
+          description: 计划执行时间
+
+    TaskUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        parameters:
+          type: object
+
+    TaskListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - data
+            - pagination
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Task'
+            pagination:
+              $ref: '#/components/schemas/PaginationInfo'
+
+    TaskLogsResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    format: date-time
+                  level:
+                    type: string
+                    enum: [debug, info, warning, error]
+                  message:
+                    type: string
+                  context:
+                    type: object
+
+    # 知识库相关模型
+    KnowledgeSearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 搜索关键词
+        category:
+          type: string
+          enum: [troubleshooting, best_practices, procedures, configurations]
+          description: 知识分类
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+          description: 返回结果数量
+
+    KnowledgeSearchResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  content:
+                    type: string
+                  category:
+                    type: string
+                  score:
+                    type: number
+                    format: float
+                  created_at:
+                    type: string
+                    format: date-time
+
+    # 告警相关模型
+    AlertSeverity:
+      type: string
+      enum: [critical, high, medium, low]
+      description: 告警严重程度
+
+    AlertStatus:
+      type: string
+      enum: [active, acknowledged, resolved]
+      description: 告警状态
+
+    Alert:
+      type: object
+      required:
+        - id
+        - title
+        - severity
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          description: 告警ID
+        title:
+          type: string
+          description: 告警标题
+        description:
+          type: string
+          description: 告警描述
+        severity:
+          $ref: '#/components/schemas/AlertSeverity'
+        status:
+          $ref: '#/components/schemas/AlertStatus'
+        source:
+          type: string
+          description: 告警来源
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+          description: 告警标签
+        annotations:
+          type: object
+          additionalProperties:
+            type: string
+          description: 告警注释
+        created_at:
+          type: string
+          format: date-time
+        acknowledged_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+
+    AlertListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          required:
+            - data
+            - pagination
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Alert'
+            pagination:
+              $ref: '#/components/schemas/PaginationInfo'
+
+    AlertAcknowledgeRequest:
+      type: object
+      required:
+        - comment
+      properties:
+        comment:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 确认备注
+
+    # 分页信息
+    PaginationInfo:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+        - pages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          description: 当前页码
+        limit:
+          type: integer
+          minimum: 1
+          description: 每页数量
+        total:
+          type: integer
+          minimum: 0
+          description: 总记录数
+        pages:
+          type: integer
+          minimum: 0
+          description: 总页数
+        has_next:
+          type: boolean
+          description: 是否有下一页
+        has_prev:
+          type: boolean
+          description: 是否有上一页

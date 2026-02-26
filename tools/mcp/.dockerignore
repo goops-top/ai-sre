@@ -1,0 +1,49 @@
+# Git相关
+.git
+.gitignore
+
+# 构建产物
+mcp-server
+mcp-client
+main
+bin/
+*.exe
+
+# 开发工具
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+logs/
+
+# 测试文件
+*_test.go
+test_*.md
+
+# 文档
+README.md
+*.md
+docs/
+
+# 示例和测试
+examples/
+testing/
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# 环境文件
+.env
+.env.local
+.env.*.local
+
+# 缓存
+.cache/
+node_modules/
