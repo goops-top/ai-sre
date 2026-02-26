@@ -685,13 +685,28 @@
     <div class="container">
         <div class="section-header">
             <h2>Quick Start</h2>
-            <p>几分钟内启动你的 AI SRE 工具服务</p>
+            <p>一条命令启动你的 AI SRE 工具服务</p>
         </div>
 
         <div class="code-block">
             <div class="code-header">
                 <div class="dot-group"><span></span><span></span><span></span></div>
-                Terminal - Build &amp; Run
+                Terminal - Docker Quick Start (Recommended)
+            </div>
+<pre><span class="comment"># One-liner to start MCP Server</span>
+<span class="command">docker run</span> <span class="flag">--name</span> ai-sre <span class="flag">-itd</span> <span class="flag">--network</span> host \
+  <span class="flag">-e</span> TENCENTCLOUD_SECRET_ID=<span class="string">${secretID}</span> \
+  <span class="flag">-e</span> TENCENTCLOUD_SECRET_KEY=<span class="string">${secretKey}</span> \
+  ccr.ccs.tencentyun.com/goops/ai-sre-mcp-server:latest \
+  /app/mcp-server <span class="flag">-transport</span> http <span class="flag">-port</span> 8080 <span class="flag">--log-level</span> debug
+
+<span class="comment"># MCP tools available at http://&lt;your-ip&gt;:8080/mcp</span></pre>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <div class="dot-group"><span></span><span></span><span></span></div>
+                Terminal - Build from Source
             </div>
 <pre><span class="comment"># Clone the repository</span>
 <span class="command">git clone</span> https://github.com/goops-top/ai-sre.git
@@ -704,21 +719,6 @@
 <span class="command">export</span> TENCENTCLOUD_SECRET_ID=<span class="string">"your_secret_id"</span>
 <span class="command">export</span> TENCENTCLOUD_SECRET_KEY=<span class="string">"your_secret_key"</span>
 ./bin/mcp-server <span class="flag">-transport</span> http <span class="flag">-port</span> 8080</pre>
-        </div>
-
-        <div class="code-block">
-            <div class="code-header">
-                <div class="dot-group"><span></span><span></span><span></span></div>
-                Terminal - Docker Deploy
-            </div>
-<pre><span class="comment"># Docker one-liner</span>
-<span class="command">docker run</span> <span class="flag">-d</span> \
-  <span class="flag">--name</span> ai-sre-mcp-server \
-  <span class="flag">-p</span> 8080:8080 \
-  <span class="flag">-e</span> TENCENTCLOUD_SECRET_ID=<span class="string">"your_secret_id"</span> \
-  <span class="flag">-e</span> TENCENTCLOUD_SECRET_KEY=<span class="string">"your_secret_key"</span> \
-  <span class="flag">-e</span> TENCENTCLOUD_REGION=<span class="string">"ap-beijing"</span> \
-  ai-sre-mcp-server:latest</pre>
         </div>
     </div>
 </section>

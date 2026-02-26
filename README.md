@@ -85,13 +85,29 @@ ai-sre/
 
 ## 快速开始
 
+### Docker 一键启动 (推荐)
+
+已提供预构建镜像，一条命令即可启动 MCP Server：
+
+```bash
+docker run --name ai-sre -itd --network host \
+  -e TENCENTCLOUD_SECRET_ID=${secretID} \
+  -e TENCENTCLOUD_SECRET_KEY=${secretKey} \
+  ccr.ccs.tencentyun.com/goops/ai-sre-mcp-server:latest \
+  /app/mcp-server -transport http -port 8080 --log-level debug
+```
+
+启动后，MCP 工具服务默认在 `http://<your-ip>:8080/mcp` 提供服务。
+
+> 如需使用内网域名访问腾讯云 API，增加 `-e TENCENTCLOUD_USE_INTERNAL=true` 参数。
+
 ### 环境要求
 
-- Go 1.24+
-- Docker (可选，用于容器化部署)
+- Go 1.24+ (源码编译时需要)
+- Docker (容器化部署)
 - 腾讯云 SecretID / SecretKey (使用云产品工具时必需)
 
-### 本地编译运行
+### 源码编译运行
 
 ```bash
 # 克隆项目
@@ -111,7 +127,7 @@ export TENCENTCLOUD_SECRET_KEY="your_secret_key"
 ./bin/mcp-server -transport http -port 8080
 ```
 
-### Docker 部署
+### 自行构建 Docker 镜像
 
 ```bash
 cd tools/mcp
@@ -321,6 +337,34 @@ make deploy-staging
 # 部署到 production
 make deploy-prod
 ```
+
+## Changelog
+
+### v0.0.1 (2025-02-25)
+
+首个发布版本，实现核心 MCP 工具框架和腾讯云产品集成。
+
+**MCP 框架**
+- 实现 MCP JSON-RPC 协议，支持 stdio / HTTP / SSE 三种传输模式
+- 支持 Bearer Token / Basic Auth / API Key + IP 白名单多种认证方式
+- 工具双注册机制，确保 stdio 和 HTTP 模式行为一致
+- 所有工具支持 JSON 和 Table 双输出格式
+
+**腾讯云产品工具 (33 个)**
+- **TKE 容器服务 (11 个)** — 集群列表、节点实例、超级节点、addon、Master 组件状态、日志开关、自定义参数、K8s 版本、OS 镜像、应用市场、集群等级价格
+- **CVM 云服务器 (2 个)** — 实例列表查询、实例状态查询
+- **CLB 负载均衡 (4 个)** — CLB 实例、监听器、后端目标、健康检查
+- **CDB 云数据库 (4 个)** — MySQL 实例列表、实例详情、慢查询日志、错误日志
+- **VPC 私有网络 (9 个)** — VPC、子网、安全组、弹性网卡、EIP、带宽包、终端节点、终端节点服务、对等连接
+- **通用工具 (3 个)** — 地域列表查询、地域详情、API 连接验证
+
+**内置工具 (3 个)**
+- ping 连接测试、echo 文本处理、system_info 系统信息
+
+**基础设施**
+- 支持腾讯云内网域名访问 (`TENCENTCLOUD_USE_INTERNAL=true`)
+- Kubernetes 公共客户端库 (命名空间、工作负载、Pod 状态)
+- Docker 镜像：`ccr.ccs.tencentyun.com/goops/ai-sre-mcp-server:latest`
 
 ## 许可证
 
